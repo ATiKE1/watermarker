@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Watermarker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"  rel="stylesheet">
+    <link href="../static/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container text-center">
+    <h2>Python Watermarker</h2>
+
+    <form id="watermarkForm" action="/process" method="post" enctype="multipart/form-data">
+
+        <div class="mb-3">
+            <label for="image" class="form-label">Upload Base Image</label>
+            <input class="form-control" type="file" name="image" id="image" accept="image/*" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="watermark" class="form-label">Upload Watermark (PNG)</label>
+            <input class="form-control" type="file" name="watermark" id="watermark" accept="image/png" required>
+        </div>
+
+        <div id="preview-container">
+            <img id="base-preview" src="" alt="Base image preview" style="width:100%; display:none;">
+            <img id="watermark-preview" src="" alt="Drag watermark here" style="display:none;">
+        </div>
+
+        <input type="hidden" name="wm_x" id="wm_x" value="20">
+        <input type="hidden" name="wm_y" id="wm_y" value="20">
+
+        <div class="mb-3">
+            <label for="opacity" class="form-label">Watermark Opacity</label>
+            <input type="range" class="form-range" name="opacity" id="opacity" min="0" max="255" value="128">
+        </div>
+
+        <div class="mb-3">
+            <label for="scale" class="form-label">Watermark Size (%)</label>
+            <input type="range" class="form-range" name="scale" id="scale" min="10" max="100" value="50">
+        </div>
+
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">Process Image</button>
+        </div>
+
+    </form>
+</div>
+
+<script src="../static/js/main_logic.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script> 
+</body>
+</html>
