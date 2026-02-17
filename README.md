@@ -1,50 +1,161 @@
-# 🖼️ Watermarker Web App
+# 🖼️ Watermarker
 
-Simple web app for adding custom watermarks to images.  
-Allows users to upload an image and a watermark (PNG), drag the watermark to the desired position, adjust size and opacity, then download the result.
+Веб-приложение на Flask для нанесения **одного или нескольких watermark-слоёв** на изображение, с визуальным предпросмотром, перетаскиванием и настройкой прозрачности/масштаба каждого слоя.
 
----
-
-## 🔧 Features
-
-- Upload base image and watermark (PNG only (u can change :) it)
-- Drag & drop watermark positioning
-- Adjust watermark size and opacity
-- Image processing via `Pillow`
-- Download final image as JPEG
+Также добавлена **подписочная система** (Free / Pro / Business), которая ограничивает максимальное количество watermark на одно изображение.
 
 ---
 
-## 🧰 Technologies Used
+## Основные возможности
 
-- `Python 3`
-- `Flask` – web framework
-- `Pillow` – image manipulation
-- `HTML/CSS/JavaScript` – frontend
-- `Bootstrap 5` – styling
+- Загрузка базового изображения.
+- Загрузка **нескольких watermark (PNG)**.
+- Drag-and-drop позиционирование каждого watermark в зоне предпросмотра.
+- Индивидуальные настройки для каждого слоя:
+  - масштаб (%),
+  - прозрачность (0–255).
+- Подписочная модель:
+  - **FREE**: до 1 watermark,
+  - **PRO**: до 5 watermark,
+  - **BUSINESS**: до 20 watermark.
+- Сохранение подписок в SQLite.
+- Экспорт результата в JPEG.
 
+---
 
-**For install dependencies use:**
+## Технологии
+
+- Python 3.10+
+- Flask
+- Pillow
+- SQLite (через стандартный `sqlite3`)
+- HTML/CSS/JavaScript
+- Bootstrap 5
+
+---
+
+## Установка
+
 ```bash
+python -m venv .venv
+source .venv/bin/activate
 pip install flask pillow
 ```
 
-## 📁 Project Structure
-![Project Structure img](project-structure.png)
 ---
 
-## 🚀 How to Run
-### Step 1. Install dependencies
-### Step 2. Clone this repo
-```bash
-git clone https://...
-cd watermarker
-``` 
-### Step 3. Run the app
+## Запуск
+
 ```bash
 python app.py
 ```
-### Step 4. Finally, open in browser
-### 👉 http://localhost:5000
 
-# ❤️ I Like You
+После запуска приложение доступно на:
+
+- http://127.0.0.1:5000
+- http://localhost:5000
+
+---
+
+## Как пользоваться
+
+1. Откройте главную страницу.
+2. В блоке «Подписка» укажите email и выберите план.
+3. Нажмите «Сохранить подписку».
+4. Загрузите базовое изображение.
+5. Загрузите один или несколько watermark (PNG).
+6. Перетащите watermark в нужные позиции и настройте размер/прозрачность.
+7. Нажмите «Обработать изображение» и скачайте результат.
+
+> Если количество слоёв превышает лимит вашего плана, сервер вернёт ошибку `403`.
+
+---
+
+## API
+
+### `GET /plans`
+Возвращает доступные планы подписки и лимиты.
+
+Пример ответа:
+
+```json
+{
+  "free": {"max_layers": 1, "description": "..."},
+  "pro": {"max_layers": 5, "description": "..."},
+  "business": {"max_layers": 20, "description": "..."}
+}
+```
+
+### `POST /subscribe`
+Создаёт/обновляет подписку пользователя.
+
+Поддерживает JSON и form-data.
+
+Поля:
+- `email` (обязательно)
+- `plan` (`free` | `pro` | `business`)
+
+Пример JSON:
+
+```json
+{
+  "email": "user@example.com",
+  "plan": "pro"
+}
+```
+
+### `POST /process`
+Обрабатывает изображение и возвращает JPEG-файл.
+
+Form-data поля:
+- `image` — базовое изображение,
+- `watermarks` — список PNG watermark,
+- `watermark_config` — JSON массив параметров слоёв,
+- `preview_w` / `preview_h` — размеры зоны предпросмотра,
+- `subscriber_email` — email для применения лимитов подписки.
+
+Формат `watermark_config`:
+
+```json
+[
+  {"index": 0, "x": 30, "y": 60, "opacity": 120, "scale": 45},
+  {"index": 1, "x": 200, "y": 150, "opacity": 180, "scale": 70}
+]
+```
+
+Где:
+- `index` — индекс watermark в порядке, в котором файл отправлен в `watermarks`.
+- `x`, `y` — координаты в зоне предпросмотра.
+- `opacity` — 0..255.
+- `scale` — масштаб в процентах.
+
+---
+
+## Хранение данных
+
+Создаётся файл `subscriptions.db` с таблицей `subscribers`:
+
+- `email` (PRIMARY KEY)
+- `plan`
+- `created_at`
+
+Временные файлы изображений создаются в `uploads/` и удаляются после обработки.
+
+---
+
+## Структура проекта
+
+- `app.py` — backend, маршруты, обработка изображений, подписки.
+- `templates/index.html` — UI формы подписки и watermark-редактора.
+- `static/js/main_logic.js` — логика предпросмотра, drag-and-drop и сериализация конфигурации.
+- `static/css/style.css` — стили интерфейса.
+
+---
+
+## Идеи для дальнейшего развития
+
+- Аутентификация пользователей и JWT.
+- Платёжные провайдеры (Stripe/ЮKassa).
+- История обработок и облачное хранение.
+- Экспорт в PNG/WebP.
+- Batch-обработка нескольких базовых изображений.

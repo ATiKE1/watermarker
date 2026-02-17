@@ -1,54 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watermarker</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"  rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="../static/css/style.css" rel="stylesheet">
 </head>
 <body>
 
-<div class="container text-center">
-    <h2>Python Watermarker</h2>
+<div class="container py-4">
+    <h2 class="mb-4 text-center">Python Watermarker</h2>
+
+    <div class="card mb-4">
+        <div class="card-header">Подписка</div>
+        <div class="card-body">
+            <form id="subscriptionForm" class="row g-3">
+                <div class="col-md-5">
+                    <label for="subscriber_email" class="form-label">Email</label>
+                    <input class="form-control" type="email" id="subscriber_email" name="subscriber_email" placeholder="you@example.com" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="plan" class="form-label">План</label>
+                    <select id="plan" name="plan" class="form-select">
+                        {% for plan_id, plan_info in plans.items() %}
+                        <option value="{{ plan_id }}">{{ plan_id|upper }} — до {{ plan_info.max_layers }} watermark</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-grid align-self-end">
+                    <button class="btn btn-outline-primary" type="submit">Сохранить подписку</button>
+                </div>
+            </form>
+            <small id="subscriptionStatus" class="text-muted d-block mt-2">По умолчанию действует FREE-план.</small>
+        </div>
+    </div>
 
     <form id="watermarkForm" action="/process" method="post" enctype="multipart/form-data">
 
         <div class="mb-3">
-            <label for="image" class="form-label">Upload Base Image</label>
+            <label for="image" class="form-label">Загрузите базовое изображение</label>
             <input class="form-control" type="file" name="image" id="image" accept="image/*" required>
         </div>
 
         <div class="mb-3">
-            <label for="watermark" class="form-label">Upload Watermark (PNG)</label>
-            <input class="form-control" type="file" name="watermark" id="watermark" accept="image/png" required>
+            <label for="watermarks" class="form-label">Загрузите один или несколько watermark (PNG)</label>
+            <input class="form-control" type="file" name="watermarks" id="watermarks" accept="image/png" multiple required>
         </div>
 
         <div id="preview-container">
             <img id="base-preview" src="" alt="Base image preview" style="width:100%; display:none;">
-            <img id="watermark-preview" src="" alt="Drag watermark here" style="display:none;">
-        </div>
-
-        <input type="hidden" name="wm_x" id="wm_x" value="20">
-        <input type="hidden" name="wm_y" id="wm_y" value="20">
-
-        <div class="mb-3">
-            <label for="opacity" class="form-label">Watermark Opacity</label>
-            <input type="range" class="form-range" name="opacity" id="opacity" min="0" max="255" value="128">
+            <div id="watermark-stage"></div>
         </div>
 
         <div class="mb-3">
-            <label for="scale" class="form-label">Watermark Size (%)</label>
-            <input type="range" class="form-range" name="scale" id="scale" min="10" max="100" value="50">
+            <label class="form-label">Настройки watermark</label>
+            <div id="layer-controls" class="d-flex flex-column gap-2"></div>
         </div>
+
+        <input type="hidden" name="watermark_config" id="watermark_config" value="[]">
+        <input type="hidden" name="preview_w" id="preview_w" value="0">
+        <input type="hidden" name="preview_h" id="preview_h" value="0">
+        <input type="hidden" name="subscriber_email" id="subscriber_email_hidden" value="">
 
         <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-primary btn-lg">Process Image</button>
+            <button type="submit" class="btn btn-primary btn-lg">Обработать изображение</button>
         </div>
 
     </form>
 </div>
 
 <script src="../static/js/main_logic.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
