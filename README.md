@@ -1,50 +1,142 @@
-# 🖼️ Watermarker Web App
+# Watermarker
 
-Simple web app for adding custom watermarks to images.  
-Allows users to upload an image and a watermark (PNG), drag the watermark to the desired position, adjust size and opacity, then download the result.
+Веб‑приложение на Flask для наложения нескольких watermark на изображение с ограничениями по подписке.
 
----
+## Что нового
 
-## 🔧 Features
-
-- Upload base image and watermark (PNG only (u can change :) it)
-- Drag & drop watermark positioning
-- Adjust watermark size and opacity
-- Image processing via `Pillow`
-- Download final image as JPEG
+- Поддержка **нескольких watermark** за один рендер.
+- Поддержка **индивидуального позиционирования, прозрачности и масштаба** для каждого слоя.
+- **Подписочная система** (SQLite):
+  - Бесплатно: до 1 watermark.
+  - Активная подписка: до 10 watermark.
+- Обновлённый UI с панелью слоёв.
 
 ---
 
-## 🧰 Technologies Used
+## Стек
 
-- `Python 3`
-- `Flask` – web framework
-- `Pillow` – image manipulation
-- `HTML/CSS/JavaScript` – frontend
-- `Bootstrap 5` – styling
+- Python 3.10+
+- Flask
+- Pillow
+- SQLite (встроено)
+- HTML/CSS/JS + Bootstrap 5
 
+---
 
-**For install dependencies use:**
+## Структура проекта
+
+```text
+watermarker/
+├── app.py
+├── README.md
+├── static/
+│   ├── css/style.css
+│   └── js/main_logic.js
+├── templates/
+│   ├── index.html
+│   └── subscribe.html
+└── uploads/                  # создаётся автоматически
+```
+
+---
+
+## Запуск локально
+
+1. Установите зависимости:
+
 ```bash
 pip install flask pillow
 ```
 
-## 📁 Project Structure
-![Project Structure img](project-structure.png)
----
+2. Запустите приложение:
 
-## 🚀 How to Run
-### Step 1. Install dependencies
-### Step 2. Clone this repo
-```bash
-git clone https://...
-cd watermarker
-``` 
-### Step 3. Run the app
 ```bash
 python app.py
 ```
-### Step 4. Finally, open in browser
-### 👉 http://localhost:5000
 
-# ❤️ I Like You
+3. Откройте:
+
+```text
+http://localhost:5000
+```
+
+---
+
+## Как пользоваться
+
+### 1) Наложение watermark
+
+1. Укажите email (опционально), чтобы проверить активную подписку.
+2. Загрузите базовое изображение.
+3. Загрузите один или несколько PNG watermark.
+4. В превью перетаскивайте watermark мышью.
+5. Выберите активный слой в панели `Layer N` и настройте:
+   - `Opacity` (0–255)
+   - `Scale` (10–200%)
+6. Нажмите `Process Image` для скачивания результата.
+
+### 2) Подписка
+
+1. Перейдите на `/subscribe`.
+2. Введите email.
+3. Выберите план:
+   - Monthly (30 дней)
+   - Yearly (365 дней)
+4. После активации подписка записывается в `subscriptions.db`.
+
+---
+
+## API/маршруты
+
+### `GET /`
+Главная страница обработки изображений.
+
+### `POST /process`
+Обрабатывает изображение и возвращает JPEG файл.
+
+**Form fields:**
+- `image`: base image
+- `watermarks`: список PNG watermark файлов
+- `subscription_email`: email для проверки подписки
+- `watermark_configs`: JSON-массив конфигураций слоёв
+- `preview_width`, `preview_height`: размер превью для пересчёта координат
+
+**Ограничения:**
+- Без подписки: максимум 1 watermark.
+- С активной подпиской: максимум 10 watermark.
+
+### `GET /subscribe`
+Форма активации подписки.
+
+### `POST /subscribe`
+Создаёт/обновляет запись подписки в SQLite.
+
+---
+
+## Хранение данных
+
+- База подписок: `subscriptions.db`
+- Таблица: `subscribers(email, plan, created_at, expires_at)`
+- Временные файлы загружаемых изображений: папка `uploads/`
+
+---
+
+## Важные замечания
+
+- Текущая подписка — демо-механика без платёжного шлюза.
+- Для production обязательно:
+  - добавить реальную аутентификацию,
+  - подключить платежи,
+  - вынести секреты и настройки в переменные окружения,
+  - организовать очистку output-файлов после скачивания.
+
+---
+
+## Проверка качества
+
+Минимальные команды:
+
+```bash
+python -m py_compile app.py
+```
+
