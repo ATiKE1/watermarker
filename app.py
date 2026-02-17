@@ -177,7 +177,7 @@ def process():
         output_path = UPLOAD_FOLDER / f"result_{uuid.uuid4()}.jpg"
         combined.convert("RGB").save(output_path, "JPEG")
 
-        return send_file(output_path, as_attachment=True)
+        return send_file(output_path, as_attachment=True, download_name="watermarked.jpg")
 
     except Exception as error:
         return f"Ошибка при обработке: {str(error)}", 500

@@ -81,6 +81,90 @@ document.addEventListener("DOMContentLoaded", function () {
         layer.element.style.opacity = layer.opacity / 255;
     };
 
+    const setLimit = (limit, active) => {
+        maxFiles = Number(limit);
+        limitHint.textContent = `Текущий лимит watermark: ${maxFiles}${active ? " (подписка активна)" : " (free)"}`;
+    };
+
+    const fetchSubscriptionStatus = async () => {
+        const email = emailInput.value.trim();
+        const response = await fetch("/subscription-status", {
+            method: "POST",
+            body: new URLSearchParams({ email })
+        });
+        const data = await response.json();
+        setLimit(data.limit, data.active);
+    };
+
+    const renderLayerList = () => {
+        layerList.innerHTML = "";
+        layers.forEach((layer, index) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = `inline-flex px-3 py-1 mr-2 mb-2 rounded-full text-sm border ${layer.id === activeLayerId ? "bg-red-600 text-white border-red-600" : "bg-white text-red-700 border-red-300"}`;
+            button.textContent = `Layer ${index + 1}`;
+            button.addEventListener("click", () => setActiveLayer(layer.id));
+            layerList.appendChild(button);
+        });
+    };
+
+    const syncFormConfig = () => {
+        document.getElementById("preview_width").value = Math.max(1, basePreview.clientWidth || 1);
+        document.getElementById("preview_height").value = Math.max(1, basePreview.clientHeight || 1);
+
+        const payload = layers.map((layer) => ({
+            x: layer.x,
+            y: layer.y,
+            opacity: layer.opacity,
+            scale: layer.scale
+        }));
+
+        configInput.value = JSON.stringify(payload);
+    };
+
+    const setActiveLayer = (layerId) => {
+        activeLayerId = layerId;
+        const layer = layers.find((item) => item.id === layerId);
+        if (!layer) return;
+
+        opacityInput.value = layer.opacity;
+        scaleInput.value = layer.scale;
+        renderLayerList();
+    };
+
+    const createLayerElement = (layer) => {
+        const img = document.createElement("img");
+        img.src = layer.src;
+        img.className = "watermark-preview";
+        img.style.left = `${layer.x}px`;
+        img.style.top = `${layer.y}px`;
+        img.style.width = `${layer.scale}%`;
+        img.style.opacity = layer.opacity / 255;
+
+        img.addEventListener("mousedown", function (event) {
+            activeLayerId = layer.id;
+            setActiveLayer(layer.id);
+
+            const rect = img.getBoundingClientRect();
+            dragState = {
+                layerId: layer.id,
+                offsetX: event.clientX - rect.left,
+                offsetY: event.clientY - rect.top
+            };
+        });
+
+        layer.element = img;
+        container.appendChild(img);
+    };
+
+    const refreshLayerVisual = (layer) => {
+        if (!layer.element) return;
+        layer.element.style.left = `${layer.x}px`;
+        layer.element.style.top = `${layer.y}px`;
+        layer.element.style.width = `${layer.scale}%`;
+        layer.element.style.opacity = layer.opacity / 255;
+    };
+
     document.addEventListener("mouseup", function () {
         dragState = null;
     });
