@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, render_template, request, send_file
 from PIL import Image, ImageEnhance
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -17,6 +17,7 @@ DB_PATH = BASE_DIR / "subscriptions.db"
 UPLOAD_FOLDER.mkdir(exist_ok=True)
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret")
 
 FREE_WATERMARK_LIMIT = 1
 SUBSCRIBER_WATERMARK_LIMIT = 10
@@ -43,9 +44,9 @@ def normalize_email(value: str | None) -> str | None:
     return email if "@" in email else None
 
 
-def get_subscription_status(email: str | None) -> tuple[bool, int]:
+def has_active_subscription(email: str | None) -> bool:
     if not email:
-        return False, FREE_WATERMARK_LIMIT
+        return False
 
     with sqlite3.connect(DB_PATH) as conn:
         row = conn.execute(
@@ -54,36 +55,27 @@ def get_subscription_status(email: str | None) -> tuple[bool, int]:
         ).fetchone()
 
     if not row:
-        return False, FREE_WATERMARK_LIMIT
+        return False
 
     expires_at = datetime.fromisoformat(row[0])
-    is_active = expires_at > datetime.now(timezone.utc)
-    limit = SUBSCRIBER_WATERMARK_LIMIT if is_active else FREE_WATERMARK_LIMIT
-    return is_active, limit
+    return expires_at > datetime.now(timezone.utc)
 
 
 @app.route("/")
 def index():
-    return render_template("index.html", free_limit=FREE_WATERMARK_LIMIT)
+    return render_template("index.html")
 
 
-@app.route("/subscription-status", methods=["POST"])
-def subscription_status():
-    email = normalize_email(request.form.get("email"))
-    is_active, limit = get_subscription_status(email)
-    return jsonify({"active": is_active, "limit": limit})
-
-
-@app.route("/subscribe", methods=["POST"])
+@app.route("/subscribe", methods=["GET", "POST"])
 def subscribe():
+    if request.method == "GET":
+        return render_template("subscribe.html")
+
     email = normalize_email(request.form.get("email"))
     plan = request.form.get("plan", "monthly")
 
     if not email:
-        return jsonify({"error": "Введите корректный email."}), 400
-
-    if plan not in {"monthly", "yearly"}:
-        return jsonify({"error": "Некорректный тариф."}), 400
+        return render_template("subscribe.html", error="Введите корректный email."), 400
 
     duration_days = 30 if plan == "monthly" else 365
     expires_at = datetime.now(timezone.utc) + timedelta(days=duration_days)
@@ -107,12 +99,9 @@ def subscribe():
             ),
         )
 
-    return jsonify(
-        {
-            "ok": True,
-            "message": f"Подписка активирована до {expires_at.date()}.",
-            "limit": SUBSCRIBER_WATERMARK_LIMIT,
-        }
+    return render_template(
+        "subscribe.html",
+        success=f"Подписка активирована для {email} до {expires_at.date()}.",
     )
 
 
@@ -122,24 +111,29 @@ def process():
     watermark_images = request.files.getlist("watermarks")
 
     if not base_image or not watermark_images:
-        return jsonify({"error": "Загрузите базовое изображение и watermark файлы."}), 400
+        return "Image and watermarks are required", 400
 
     email = normalize_email(request.form.get("subscription_email"))
-    _, limit = get_subscription_status(email)
+    is_subscriber = has_active_subscription(email)
+    limit = SUBSCRIBER_WATERMARK_LIMIT if is_subscriber else FREE_WATERMARK_LIMIT
 
     if len(watermark_images) > limit:
-        return jsonify({"error": f"Лимит вашего тарифа — {limit} watermark(ов)."}), 403
+        return (
+            f"Лимит для вашего тарифа: {limit} watermark(ов). "
+            f"Оформите подписку для увеличения лимита.",
+            403,
+        )
 
     try:
         raw_configs = request.form.get("watermark_configs", "[]")
         watermark_configs = json.loads(raw_configs)
         if len(watermark_configs) != len(watermark_images):
-            return jsonify({"error": "Неверная конфигурация watermark слоев."}), 400
+            return "Invalid watermark configuration length", 400
 
         preview_width = max(int(float(request.form.get("preview_width", "1"))), 1)
         preview_height = max(int(float(request.form.get("preview_height", "1"))), 1)
     except (ValueError, json.JSONDecodeError):
-        return jsonify({"error": "Некорректные входные данные."}), 400
+        return "Invalid input values", 400
 
     base_path = UPLOAD_FOLDER / f"base_{uuid.uuid4()}.png"
     watermark_paths: list[Path] = []
@@ -179,13 +173,14 @@ def process():
             transparent.paste(watermark, (wm_x, wm_y), watermark)
 
         combined = Image.alpha_composite(base, transparent)
+
         output_path = UPLOAD_FOLDER / f"result_{uuid.uuid4()}.jpg"
         combined.convert("RGB").save(output_path, "JPEG")
 
         return send_file(output_path, as_attachment=True, download_name="watermarked.jpg")
 
     except Exception as error:
-        return jsonify({"error": f"Ошибка при обработке: {str(error)}"}), 500
+        return f"Ошибка при обработке: {str(error)}", 500
 
     finally:
         if base_path.exists():

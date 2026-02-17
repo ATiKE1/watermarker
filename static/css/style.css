@@ -1,5 +1,26 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 860px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+
+.form-label {
+    font-weight: bold;
+}
+
 #preview-container {
     position: relative;
+    width: 100%;
+    max-width: 760px;
+    margin: 20px auto;
+    border: 2px dashed #ccc;
+    padding: 10px;
+    min-height: 240px;
+    background: #fff;
 }
 
 .watermark-preview {
@@ -10,25 +31,8 @@
     max-height: 95%;
     cursor: move;
     z-index: 10;
-    user-select: none;
 }
 
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 10, 10, 0.72);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    z-index: 100;
-}
-
-.modal-card {
-    width: min(100%, 480px);
-    background: linear-gradient(180deg, #1a0a0a 0%, #12090b 100%);
-    border: 1px solid #7f1d1d;
-    border-radius: 1rem;
-    padding: 1rem;
-    box-shadow: 0 24px 70px rgba(69, 10, 10, 0.45);
+.watermark-panel {
+    text-align: left;
 }
