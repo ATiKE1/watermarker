@@ -1,50 +1,44 @@
-# 🖼️ Watermarker Web App
+# Watermarker
 
-Simple web app for adding custom watermarks to images.  
-Allows users to upload an image and a watermark (PNG), drag the watermark to the desired position, adjust size and opacity, then download the result.
+Flask-приложение для наложения нескольких watermark на изображение с ограничениями по подписке.
 
----
+## Основные возможности
 
-## 🔧 Features
+- Наложение нескольких PNG watermark за один рендер.
+- Drag & drop позиционирование каждого слоя.
+- Индивидуальные настройки opacity/scale для активного слоя.
+- Подписки на SQLite:
+  - Free: до 1 watermark.
+  - Active subscription: до 10 watermark.
+- Проверка лимита **до отправки формы**: ограничение количества выбираемых watermark файлов на клиенте.
+- Ошибки и подписка — через модальные окна на главной странице (без отдельного UI-роута подписки).
+- UI переведён на Tailwind CSS, тёмная красная тема.
 
-- Upload base image and watermark (PNG only (u can change :) it)
-- Drag & drop watermark positioning
-- Adjust watermark size and opacity
-- Image processing via `Pillow`
-- Download final image as JPEG
+## Стек
 
----
+- Python 3.10+
+- Flask
+- Pillow
+- SQLite
+- Tailwind CSS + Vanilla JS
 
-## 🧰 Technologies Used
+## Запуск
 
-- `Python 3`
-- `Flask` – web framework
-- `Pillow` – image manipulation
-- `HTML/CSS/JavaScript` – frontend
-- `Bootstrap 5` – styling
-
-
-**For install dependencies use:**
 ```bash
 pip install flask pillow
-```
-
-## 📁 Project Structure
-![Project Structure img](project-structure.png)
----
-
-## 🚀 How to Run
-### Step 1. Install dependencies
-### Step 2. Clone this repo
-```bash
-git clone https://...
-cd watermarker
-``` 
-### Step 3. Run the app
-```bash
 python app.py
 ```
-### Step 4. Finally, open in browser
-### 👉 http://localhost:5000
 
-# ❤️ I Like You
+Открыть: `http://localhost:5000`.
+
+## Маршруты
+
+- `GET /` — главная страница.
+- `POST /subscription-status` — возвращает статус подписки и лимит watermark для email.
+- `POST /subscribe` — активирует подписку (monthly/yearly), возвращает JSON.
+- `POST /process` — обрабатывает изображение и возвращает JPG-файл.
+
+## Примечания
+
+- Подписка демонстрационная (без платежного шлюза).
+- База подписок хранится в `subscriptions.db`.
